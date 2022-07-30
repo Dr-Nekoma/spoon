@@ -2,7 +2,7 @@
 let
 in
 pkgs.mkShell {
-  buildInputs = [
+  buildInputs = with pkgs; [
     rebar3
     erlang
     erlang-ls
