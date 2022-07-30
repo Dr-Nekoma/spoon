@@ -2,4 +2,4 @@
 
 * About
 
-Spoon is a compiler for the Silverware language.
+Spoon is a compiler/interpreter for the Silverware language.
