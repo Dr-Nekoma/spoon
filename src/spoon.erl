@@ -1,6 +1,8 @@
 -module(spoon).
 
--export([eval/0, prelude/0]).
+-import(do, [fmap/2]).
+
+-export([eval/0, prelude/0, fmap_maybe/0, increment/1]).
 
 %% (fun x -> x(x)) (fun x -> x(x))
 %% {application,
@@ -94,6 +96,14 @@ eval() ->
         {error, Message} ->
             Message
     end.
+
+increment(N) ->
+  N + 1.
+
+fmap_maybe() ->
+  fmap(fun increment/1, {just, 1}).
+
+
 
 % [+ 1 2 3 4 5]
 
