@@ -26,21 +26,11 @@ evalWithEnvironment(Environment, {variable, Name}) ->
     end.
 
 evalClosure(ClosedEnvironment, Environment, Value, Label, Body) ->
-    case evalWithEnvironment(Environment, Value) of
-        {ok, EvaluatedValue} ->
-            NewEnvironment = maps:put(Label, EvaluatedValue, ClosedEnvironment),
-            evalWithEnvironment(NewEnvironment, Body);
-        Error ->
-            Error
-    end.
+    do:do(evalWithEnvironment(Environment, Value), [ fun (EvaluatedValue) -> NewEnvironment = maps:put(Label, EvaluatedValue, ClosedEnvironment),
+									     evalWithEnvironment(NewEnvironment, Body) end ]).
 
 evalNativeFunction(Environment, Function, Value) ->
-    case evalWithEnvironment(Environment, Value) of
-        {ok, Argument} ->
-            Function(Argument);
-        Error ->
-            Error
-    end.
+    do:do(evalWithEnvironment(Environment, Value), [Function]).
 
 evalApplication(Environment, Abstraction, Value) ->
     case evalWithEnvironment(Environment, Abstraction) of
@@ -62,20 +52,20 @@ genNativeFunc(Operator) ->
                fun ({literal, Y}) ->
                        {ok, {literal, Operator(X, Y)}};
                    (_) ->
-                       {error, ""}
+                       {error, "A"}
                end}};
          (_) ->
-             {error, ""}
+             {error, "B"}
      end}.
 
 add() ->
-    {opAdd, genNativeFunc(fun(A, B) -> A + B end)}.
+    {opAdd, genNativeFunc(fun erlang:'+'/2)}.
 
 subtract() ->
-    {opSub, genNativeFunc(fun(A, B) -> A - B end)}.
+    {opSub, genNativeFunc(fun erlang:'-'/2)}.
 
 multiplication() ->
-    {opMul, genNativeFunc(fun(A, B) -> A * B end)}.
+    {opMul, genNativeFunc(fun erlang:'*'/2)}.
 
 division() ->
     {opDiv,
@@ -89,21 +79,15 @@ prelude() ->
     maps:from_list([add(), subtract(), multiplication(), division()]).
 
 eval() ->
-    Expression = {application, {application, {variable, opDiv}, {literal, 40}}, {literal, 0}},
-    case evalWithEnvironment(prelude(), Expression) of
-        {ok, Result} ->
-            Result;
-        {error, Message} ->
-            Message
-    end.
+    Expression = {application, {application, {variable, opAdd}, {literal, 40}}, {abstraction, y, {variable, y}}},
+    %% Expression = {application, {application, {variable, opAdd}, {literal, 40}}, {literal, 2}},
+    evalWithEnvironment(prelude(), Expression).
 
 increment(N) ->
   N + 1.
 
 fmap_maybe() ->
   fmap(fun increment/1, {just, 1}).
-
-
 
 % [+ 1 2 3 4 5]
 
