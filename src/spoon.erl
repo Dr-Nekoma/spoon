@@ -1,13 +1,13 @@
 -module(spoon).
 
--import(do, [fmap/2]).
+-import(do, [fmap/2, do/2]).
 
--export([eval/0, prelude/0, fmap_maybe/0, increment/1]).
+-export([eval/0, prelude/0, fmap_maybe/0, increment/1, main/1]).
 
 %% (fun x -> x(x)) (fun x -> x(x))
 %% {application,
- %% {abstraction, x, {application, {variable, x}, {variable, x}}},
- %% {abstraction, x, {application, {variable, x}, {variable, x}}}}
+%% {abstraction, x, {application, {variable, x}, {variable, x}}},
+%% {abstraction, x, {application, {variable, x}, {variable, x}}}}
 
 %% {arithmetic, {operation, add, [{literal, 1}, {literal, 2}, {literal, 3}]}}
 
@@ -34,13 +34,7 @@ evalClosure(ClosedEnvironment, Environment, Value, Label, Body) ->
             Error
     end.
 
-evalNativeFunction(Environment, Function, Value) ->
-    case evalWithEnvironment(Environment, Value) of
-        {ok, Argument} ->
-            Function(Argument);
-        Error ->
-            Error
-    end.
+evalNativeFunction ( Environment , Function , Value ) -> do ( evalWithEnvironment ( Environment , Value ) , [ fun + / 2 ] ) .
 
 evalApplication(Environment, Abstraction, Value) ->
     case evalWithEnvironment(Environment, Abstraction) of
@@ -89,7 +83,7 @@ prelude() ->
     maps:from_list([add(), subtract(), multiplication(), division()]).
 
 eval() ->
-    Expression = {application, {application, {variable, opDiv}, {literal, 40}}, {literal, 0}},
+    Expression = {application, {application, {variable, opAdd}, {literal, 40}}, {literal, 2}},
     case evalWithEnvironment(prelude(), Expression) of
         {ok, Result} ->
             Result;
@@ -98,28 +92,10 @@ eval() ->
     end.
 
 increment(N) ->
-  N + 1.
+    N + 1.
 
 fmap_maybe() ->
-  fmap(fun increment/1, {just, 1}).
+    fmap(fun increment/1, {just, 1}).
 
-
-
-% [+ 1 2 3 4 5]
-
-% (defun abc (x:string, y: string, z: &rest int))
-% (abc "A" "B" 1 2 3 4 5 6 7)
-
-% {node: abstraction, parameter: [x, y, z:[]], parameter_type: [int, int, int[]], body: {node: variable, label: x} }
-
-% [1, 2, ["asd", "xyz"]]
-
-% [int, int, int]
-% [1, 2, 3]
-
-% lists:all(fun (Type, {Type2, _}) -> Type == typeOf(Type2) , Arg2)
-% [(t_integer, {integer, 1}), (int, 2), (int, 3)]
-
-% integer -> t_integer
-
-% typeOf env expression -> type
+main(_) ->
+    io:fwrite("~p~n", [eval()]).
