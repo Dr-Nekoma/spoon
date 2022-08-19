@@ -3,8 +3,7 @@
 -import(do, [fmap/2]).
 -import(prelude, [prelude/0]).
 
--export([eval/0]).
-
+-export([eval/1]).
 
 evalWithEnvironment(_, {literal, _} = Expression) ->
     {ok, Expression};
@@ -74,7 +73,6 @@ evalClosure(ClosedEnvironment, Environment, Arguments, {notVariadic, Labels}, Bo
                                 false
                         end,
                         EvaluatedValues),
-    io:fwrite("B: ~p~n", [FindAnError]),
     case FindAnError of
         {value, Error} ->
             Error;
@@ -118,26 +116,4 @@ evalApplication(Environment, Abstraction, Arguments) ->
     end.
 
 
-eval() ->
-    Expression =
-        {application,
-         {abstraction, {notVariadic, [{argument, y}]}, {variable, y}},
-         [{literal, 1}]},
-    %% Expression =
-    %%    {application,
-    %%     {abstraction, {variadic, [{rest, b}]}, {variable, b}},
-    %%      [{literal, 1}, {literal, 2}, {literal, 3}]},
-    ArithmeticExpr1 =
-        {application,
-         {variable, '/'},
-         [{literal, {integer, 1}}, {literal, {integer, 2}}, {literal, {integer, 2}}, {literal, {integer, 2}}]},
-    ArithmeticExpr2 =
-        {application,
-         {variable, '*'},
-         [{literal, {integer, 1}}, {literal, {integer, 2}}, {literal, {integer, 2}}, {literal, {integer, 2}}]},
-    %% Expression =
-    %%     {condition, {application, {variable, opOr}, [{literal, {boolean, true}}, {literal, {boolean, false}}]}, ArithmeticExpr1, ArithmeticExpr2},
-    %%Expression =
-    %%    {application, {variable, '<'}, [{literal, {integer, 1}}, {literal, {integer, 1}}]},
-
-    evalWithEnvironment(prelude(), Expression).    %%evalWithEnvironment(maps:new(), Expression).
+eval(Expression) -> evalWithEnvironment(prelude(), Expression).

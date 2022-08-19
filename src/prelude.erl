@@ -9,7 +9,7 @@ boolGreaterThan() ->
     {'>', genNativeComparisonFunc(fun erlang:'>'/2)}.
 
 boolEqual() ->
-    {'=', genNativeComparisonFunc(fun erlang:'='/2)}.
+    {'=:=', genNativeComparisonFunc(fun erlang:'=:='/2)}.
 
 boolGreaterEqualThan() ->
     {'>=', genNativeComparisonFunc(fun erlang:'>='/2)}.
@@ -19,9 +19,12 @@ boolLessEqualThan() ->
 
 boolAnd() ->
     {'&&', genNativeLogicalFunc(fun erlang:'and'/2, true)}.
-    
+
 boolOr() ->
     {'||', genNativeLogicalFunc(fun erlang:'or'/2, false)}.
+
+boolNot() ->
+    {'not', genNativeUnaryFunc(fun erlang:'not'/1)}.
 
 arithAdd() ->
     {'+', genNativeArithmeticFunc(fun erlang:'+'/2)}.
@@ -47,12 +50,22 @@ prelude() ->
                     arithMultiplication(), 
                     arithDivision(), 
                     boolAnd(), 
-                    boolOr(), 
+                    boolOr(),
+		    boolNot(),
                     boolGreaterEqualThan(), 
                     boolLessEqualThan(), 
                     boolEqual(),
                     boolLessThan(),
                     boolGreaterThan()]).
+
+genNativeUnaryFunc(Operator) ->
+    {nativeFunc,
+     fun (X) when length(X) =:= 1 ->
+            [{ok, {literal, {Type, Y}}}] = X,
+            {ok, {literal, {Type, Operator(Y)}}};
+         (X) when length(X) > 1 ->
+            erlang:error("Unary function does not accept multiple parameters")
+     end}.
 
 genNativeArithmeticFunc(ArithmeticOperator) ->
     Function =
@@ -72,22 +85,21 @@ genNativeArithmeticFunc(ArithmeticOperator) ->
 
 genNativeComparisonFunc(Operator) ->
     {nativeFunc,
-        fun([{ok, {literal, {integer, Left}}}, {ok, {literal, {integer, Right}}}]) ->
-            {ok, {literal, {boolean, Operator(Left, Right)}}};
-           (_) -> erlang:error("Could not eval valid comparison expression with arity 2")
-	    end}.
+     fun ([{ok, {literal, {integer, Left}}}, {ok, {literal, {integer, Right}}}]) ->
+             {ok, {literal, {boolean, Operator(Left, Right)}}};
+         (_) ->
+             erlang:error("Could not eval valid comparison expression with arity 2")
+     end}.
 
 genNativeLogicalFunc(BoolOperator, MEmpty) ->
     Function =
         fun(Element, Accum) ->
-            case {Accum, Element} of
-                {{ok, {literal, {boolean, Acc}}}, {ok, {literal, {boolean, X}}}} ->
-                    {ok, {literal, {boolean, BoolOperator(Acc, X)}}};
-                _ ->
-                    {error, "Could not operate on this since it's not a boolean"}
-            end
+           case {Accum, Element} of
+               {{ok, {literal, {boolean, Acc}}}, {ok, {literal, {boolean, X}}}} ->
+                   {ok, {literal, {boolean, BoolOperator(Acc, X)}}};
+               _ ->
+                   {error, "Could not operate on this since it's not a boolean"}
+           end
         end,
     {nativeFunc,
-        fun(List) ->
-            lists:foldl(Function, {ok, {literal, {boolean, MEmpty}}}, List)
-        end}.
+     fun(List) -> lists:foldl(Function, {ok, {literal, {boolean, MEmpty}}}, List) end}.
