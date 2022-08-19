@@ -16,7 +16,10 @@ jobs:
         
       - name: Install Erlang
         run: sudo apt-get install erlang wget rebar -y
-        
+
+      - name: Get dependencies
+        run: rebar3 get-deps
+
       - name: Compile 
         run: rebar3 compile
 
