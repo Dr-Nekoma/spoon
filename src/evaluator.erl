@@ -1,4 +1,4 @@
--module(spoon).
+-module(evaluator).
 
 -import(do, [fmap/2]).
 -import(prelude, [prelude/0]).
