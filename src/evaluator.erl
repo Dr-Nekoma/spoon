@@ -23,56 +23,56 @@ evalWithEnvironment(Environment, {variable, Name}) ->
 
 evalCondition(Environment, Case, Then, Else) ->
     case evalWithEnvironment(Environment, Case) of
-        {ok, {literal, {boolean, true}}} -> evalWithEnvironment(Environment, Then);
-        {ok, {literal, {boolean, false}}} -> evalWithEnvironment(Environment, Else);
-        _ -> erlang:error("Expression could not be reduced to boolean")
+        {ok, {literal, {boolean, true}}} ->
+            evalWithEnvironment(Environment, Then);
+        {ok, {literal, {boolean, false}}} ->
+            evalWithEnvironment(Environment, Else);
+        _ ->
+            erlang:error("Expression could not be reduced to boolean")
     end.
 
 evalClosure(ClosedEnvironment, Environment, Arguments, {variadic, Labels}, Body) ->
-    if 
-        length(Arguments) >= length(Labels) ->
-            EvaluatedValues =
-                lists:map(fun(X) -> evalWithEnvironment(Environment, X) end, Arguments),
-            FindAnError =
-                lists:search(fun ({error, _}) ->
+    if length(Arguments) >= length(Labels) ->
+           EvaluatedValues =
+               lists:map(fun(X) -> evalWithEnvironment(Environment, X) end, Arguments),
+           FindAnError =
+               lists:search(fun ({error, _}) ->
                                     true;
                                 (_) ->
                                     false
                             end,
                             EvaluatedValues),
-            case FindAnError of
-                {value, Error} ->
-                    Error;
-                false ->
-                    {NonVariadicArgs, VariadicArgs} =
-                        lists:split(length(Labels) - 1, EvaluatedValues),
-                    {NonVariadicNames, [{rest, VariadicName}]} =
-                        lists:split(length(Labels) - 1, Labels),
-                    ParamEnv =
-                        maps:from_list(
-                            lists:merge(
-                                lists:zip(
-                                    lists:map(fun({argument, X}) -> X end, NonVariadicNames),
-                                    lists:map(fun({ok, X}) -> X end, NonVariadicArgs)),
-                                [{VariadicName,
-                                    lists:map(fun({ok, X}) -> X end, VariadicArgs)}])),
+           case FindAnError of
+               {value, Error} ->
+                   Error;
+               false ->
+                   {NonVariadicArgs, VariadicArgs} =
+                       lists:split(length(Labels) - 1, EvaluatedValues),
+                   {NonVariadicNames, [{rest, VariadicName}]} =
+                       lists:split(length(Labels) - 1, Labels),
+                   ParamEnv =
+                       maps:from_list(
+                           lists:merge(
+                               lists:zip(
+                                   lists:map(fun({argument, X}) -> X end, NonVariadicNames),
+                                   lists:map(fun({ok, X}) -> X end, NonVariadicArgs)),
+                               [{VariadicName, lists:map(fun({ok, X}) -> X end, VariadicArgs)}])),
 
-                    NewEnvironment = maps:merge(ParamEnv, ClosedEnvironment),
-                    evalWithEnvironment(NewEnvironment, Body)
-            end;
-        true -> erlang:error("Less arguments than expected for the non variadic part of the abstraction.")
+                   NewEnvironment = maps:merge(ParamEnv, ClosedEnvironment),
+                   evalWithEnvironment(NewEnvironment, Body)
+           end;
+       true ->
+           erlang:error("Less arguments than expected for the non variadic part of the abstraction.")
     end;
-            
 evalClosure(ClosedEnvironment, Environment, Arguments, {notVariadic, Labels}, Body) ->
-    EvaluatedValues =
-        lists:map(fun(X) -> evalWithEnvironment(Environment, X) end, Arguments),
+    EvaluatedValues = lists:map(fun(X) -> evalWithEnvironment(Environment, X) end, Arguments),
     FindAnError =
         lists:search(fun ({error, _}) ->
-                                true;
-                            (_) ->
-                                false
-                        end,
-                        EvaluatedValues),
+                             true;
+                         (_) ->
+                             false
+                     end,
+                     EvaluatedValues),
     case FindAnError of
         {value, Error} ->
             Error;
@@ -115,5 +115,5 @@ evalApplication(Environment, Abstraction, Arguments) ->
                            Abstraction)}
     end.
 
-
-eval(Expression) -> evalWithEnvironment(prelude(), Expression).
+eval(Expression) ->
+    evalWithEnvironment(prelude(), Expression).

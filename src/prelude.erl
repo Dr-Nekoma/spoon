@@ -37,23 +37,22 @@ arithMultiplication() ->
 
 arithDivision() ->
     {'/',
-    genNativeArithmeticFunc(fun (_, 0) ->
-                           erlang:error("Division by zero is not allowed");
-                       (A, B) ->
-                           A / B
-                   end)}.                
-
+     genNativeArithmeticFunc(fun (_, 0) ->
+                                     erlang:error("Division by zero is not allowed");
+                                 (A, B) ->
+                                     A / B
+                             end)}.
 
 prelude() ->
-    maps:from_list([arithAdd(), 
-                    arithSubtract(), 
-                    arithMultiplication(), 
-                    arithDivision(), 
-                    boolAnd(), 
+    maps:from_list([arithAdd(),
+                    arithSubtract(),
+                    arithMultiplication(),
+                    arithDivision(),
+                    boolAnd(),
                     boolOr(),
-		    boolNot(),
-                    boolGreaterEqualThan(), 
-                    boolLessEqualThan(), 
+                    boolNot(),
+                    boolGreaterEqualThan(),
+                    boolLessEqualThan(),
                     boolEqual(),
                     boolLessThan(),
                     boolGreaterThan()]).
@@ -61,10 +60,10 @@ prelude() ->
 genNativeUnaryFunc(Operator) ->
     {nativeFunc,
      fun (X) when length(X) =:= 1 ->
-            [{ok, {literal, {Type, Y}}}] = X,
-            {ok, {literal, {Type, Operator(Y)}}};
+             [{ok, {literal, {Type, Y}}}] = X,
+             {ok, {literal, {Type, Operator(Y)}}};
          (X) when length(X) > 1 ->
-            erlang:error("Unary function does not accept multiple parameters")
+             erlang:error("Unary function does not accept multiple parameters")
      end}.
 
 genNativeArithmeticFunc(ArithmeticOperator) ->
