@@ -3,40 +3,40 @@
 -export([prelude/0]).
 
 boolLessThan() ->
-    {'<', genNativeComparisonFunc(fun erlang:'<'/2)}.
+    {"<", genNativeComparisonFunc(fun erlang:'<'/2)}.
 
 boolGreaterThan() ->
-    {'>', genNativeComparisonFunc(fun erlang:'>'/2)}.
+    {">", genNativeComparisonFunc(fun erlang:'>'/2)}.
 
 boolEqual() ->
-    {'=:=', genNativeComparisonFunc(fun erlang:'=:='/2)}.
+    {"=:=", genNativeComparisonFunc(fun erlang:'=:='/2)}.
 
 boolGreaterEqualThan() ->
-    {'>=', genNativeComparisonFunc(fun erlang:'>='/2)}.
+    {">=", genNativeComparisonFunc(fun erlang:'>='/2)}.
 
 boolLessEqualThan() ->
-    {'<=', genNativeComparisonFunc(fun erlang:'=<'/2)}.
+    {"<=", genNativeComparisonFunc(fun erlang:'=<'/2)}.
 
 boolAnd() ->
-    {'&&', genNativeLogicalFunc(fun erlang:'and'/2, true)}.
+    {"and", genNativeLogicalFunc(fun erlang:'and'/2, true)}.
 
 boolOr() ->
-    {'||', genNativeLogicalFunc(fun erlang:'or'/2, false)}.
+    {"or", genNativeLogicalFunc(fun erlang:'or'/2, false)}.
 
 boolNot() ->
-    {'not', genNativeUnaryFunc(fun erlang:'not'/1)}.
+    {"not", genNativeUnaryFunc(fun erlang:'not'/1)}.
 
 arithAdd() ->
-    {'+', genNativeArithmeticFunc(fun erlang:'+'/2)}.
+    {"+", genNativeArithmeticFunc(fun erlang:'+'/2)}.
 
 arithSubtract() ->
-    {'-', genNativeArithmeticFunc(fun erlang:'-'/2)}.
+    {"-", genNativeArithmeticFunc(fun erlang:'-'/2)}.
 
 arithMultiplication() ->
-    {'*', genNativeArithmeticFunc(fun erlang:'*'/2)}.
+    {"*", genNativeArithmeticFunc(fun erlang:'*'/2)}.
 
 arithDivision() ->
-    {'/',
+    {"/",
      genNativeArithmeticFunc(fun (_, 0) ->
                                      erlang:error("Division by zero is not allowed");
                                  (A, B) ->

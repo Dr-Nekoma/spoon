@@ -1,6 +1,7 @@
 -module(evaluator).
 
 -import(do, [fmap/2]).
+-import(knife, [parse/1]).
 -import(prelude, [prelude/0]).
 
 -export([eval/1]).
@@ -59,11 +60,12 @@ evalClosure(ClosedEnvironment, Environment, Arguments, {variadic, Labels}, Body)
                                [{VariadicName, lists:map(fun({ok, X}) -> X end, VariadicArgs)}])),
 
                    NewEnvironment = maps:merge(ParamEnv, ClosedEnvironment),
-                   evalWithEnvironment(NewEnvironment, Body)
+                   evalWithEnvironment(NewEnvironment, lists:nth(1, Body))
            end;
        true ->
            erlang:error("Less arguments than expected for the non variadic part of the abstraction.")
     end;
+
 evalClosure(ClosedEnvironment, Environment, Arguments, {notVariadic, Labels}, Body) ->
     EvaluatedValues = lists:map(fun(X) -> evalWithEnvironment(Environment, X) end, Arguments),
     FindAnError =
@@ -83,7 +85,10 @@ evalClosure(ClosedEnvironment, Environment, Arguments, {notVariadic, Labels}, Bo
                         lists:map(fun({argument, X}) -> X end, Labels),
                         lists:map(fun({ok, X}) -> X end, EvaluatedValues))),
             NewEnvironment = maps:merge(ParamEnv, ClosedEnvironment),
-            evalWithEnvironment(NewEnvironment, Body)
+	    %% We are getting the head here because we need to adapt the 
+	    %% evaluator to iterate through a list of expressions.
+	    %% We need to imitate SML do, a.k.a, progn.
+            evalWithEnvironment(NewEnvironment, lists:nth(1, Body))
     end.
 
 evalNativeFunction(Environment, Function, Arguments) ->
