@@ -40,8 +40,9 @@
 
 (eval-and-compile
   (defconst silverware-keywords
-    '("if" "match" "defun" "do" "open" "defalgebraic" "defmacro"
-      "defrecord" "begin" "call" "fun" "->" "rec" "list" "quote" "#" "@" "!")))
+    '("if" "match" "defun" "do" "open" "defalgebraic" "defmacro" "lambda" "and" "or"
+      "+" "-" "*" "/" "=:=" ">" "<" ">=" "<=" "not"
+      "defrecord" "begin" "call" "->" "rec" "list" "quote" "#" "@" "!")))
 
 (defconst silverware-highlights
   `((,(regexp-opt silverware-keywords 'symbols) . font-lock-keyword-face)))
