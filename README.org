@@ -1,5 +1,46 @@
-#+TITLE: The Spoon Compiler
+#+TITLE: spoon 🥄
 
-* About
+This is a typed interpreter for the Silverware programming language implemented in Erlang.
+It is using the [[https://github.com/Dr-Nekoma/knife][knife]] parser combinator library as the parser for the language.
 
-Spoon is a compiler/interpreter for the Silverware language.
+* External Dependencies
+
+- [[https://nixos.org/download.html][nix-shell]]
+
+* How to use spoon
+
+To execute the program you do:
+
+#+begin_src shell
+nix-shell
+rebar3 shell
+#+end_src
+
+Next, you need a Silverware file (*.sw*) with code that you want to evaluate. You can have Emacs support evaluating the file *editor/silverware-mode.el*
+There are some samples in the *examples* folder.
+In the shell, proceed with:
+
+#+begin_src shell
+spoon:main(<PATH_TO_SAMPLE_FILE>).
+#+end_src
+
+Here it is an example of output:
+
+#+begin_src shell
+  Erlang/OTP 24 [erts-12.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]
+
+  Eshell V12.2  (abort with ^G)
+  1> spoon:main("examples/advanced.sw")
+  SPOON| {literal, {integer, 60}}
+  ok
+#+end_src
+
+* Developers
+
+- EduardoLR10
+- ribeirotomas1904
+- MMagueta
+
+* Dr.Nekoma
+
+Built live on [[https://www.twitch.tv/drnekoma][twitch]] and archived on [[https://www.youtube.com/channel/UCMyzdYsPiBU3xoqaOeahr6Q][youtube]]
