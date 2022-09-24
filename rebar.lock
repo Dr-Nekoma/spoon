@@ -2,7 +2,7 @@
 [{<<"do">>,{pkg,<<"do">>,<<"1.10.2">>},0},
  {<<"knife">>,
   {git,"https://github.com/Dr-Nekoma/knife.git",
-       {ref,"29d71ab147e1fda407794530d13b40496e321d2d"}},
+       {ref,"d6bd62d389d3aeb5a8bb2946750574a7d518aa42"}},
   0},
  {<<"lfe">>,{pkg,<<"lfe">>,<<"2.0.1">>},1}]}.
 [

@@ -17,7 +17,8 @@ evalWithEnvironment(Environment, {application, Abstraction, Arguments}) ->
 evalWithEnvironment(Environment, {variable, Name}) ->
     case maps:find(Name, Environment) of
         error ->
-            {error, string:concat("Unbound variable: ", Name)};
+            erlang:error(
+                io:format("Unbound variable ~p~n", [Name]));
         Result ->
             Result
     end.
@@ -29,10 +30,16 @@ evalCondition(Environment, Case, Then, Else) ->
         {ok, {literal, {boolean, false}}} ->
             evalWithEnvironment(Environment, Else);
         _ ->
-            erlang:error("Expression could not be reduced to boolean")
+            erlang:error(
+                io:format("Expression ~p could not be reduced to boolean~n", [Case]))
     end.
 
-evalClosure(ClosedEnvironment, Environment, Arguments, {variadic, Labels}, Body) ->
+evalClosure(ClosedEnvironment,
+            Environment,
+            Arguments,
+            {variadic, TypesAndLabels},
+            Body) ->
+    Labels = lists:map(fun({_, X}) -> X end, TypesAndLabels),
     if length(Arguments) >= length(Labels) ->
            EvaluatedValues =
                lists:map(fun(X) -> evalWithEnvironment(Environment, X) end, Arguments),
@@ -49,24 +56,27 @@ evalClosure(ClosedEnvironment, Environment, Arguments, {variadic, Labels}, Body)
                false ->
                    {NonVariadicArgs, VariadicArgs} =
                        lists:split(length(Labels) - 1, EvaluatedValues),
-                   {NonVariadicNames, [{rest, VariadicName}]} =
-                       lists:split(length(Labels) - 1, Labels),
+                   {NonVariadicNames, [VariadicName]} = lists:split(length(Labels) - 1, Labels),
                    ParamEnv =
                        maps:from_list(
                            lists:merge(
-                               lists:zip(
-                                   lists:map(fun({argument, X}) -> X end, NonVariadicNames),
-                                   lists:map(fun({ok, X}) -> X end, NonVariadicArgs)),
+                               lists:zip(NonVariadicNames,
+                                         lists:map(fun({ok, X}) -> X end, NonVariadicArgs)),
                                [{VariadicName, lists:map(fun({ok, X}) -> X end, VariadicArgs)}])),
 
                    NewEnvironment = maps:merge(ParamEnv, ClosedEnvironment),
                    evalWithEnvironment(NewEnvironment, lists:nth(1, Body))
            end;
        true ->
-           erlang:error("Less arguments than expected for the non variadic part of the abstraction.")
+           erlang:error("Less arguments than expected for the non variadic part of the "
+                        "abstraction.")
     end;
-
-evalClosure(ClosedEnvironment, Environment, Arguments, {notVariadic, Labels}, Body) ->
+evalClosure(ClosedEnvironment,
+            Environment,
+            Arguments,
+            {notVariadic, TypesAndLabels},
+            Body) ->
+    Labels = lists:map(fun({_, X}) -> X end, TypesAndLabels),
     EvaluatedValues = lists:map(fun(X) -> evalWithEnvironment(Environment, X) end, Arguments),
     FindAnError =
         lists:search(fun ({error, _}) ->
@@ -81,13 +91,11 @@ evalClosure(ClosedEnvironment, Environment, Arguments, {notVariadic, Labels}, Bo
         false ->
             ParamEnv =
                 maps:from_list(
-                    lists:zip(
-                        lists:map(fun({argument, X}) -> X end, Labels),
-                        lists:map(fun({ok, X}) -> X end, EvaluatedValues))),
+                    lists:zip(Labels, lists:map(fun({ok, X}) -> X end, EvaluatedValues))),
             NewEnvironment = maps:merge(ParamEnv, ClosedEnvironment),
-	    %% We are getting the head here because we need to adapt the 
-	    %% evaluator to iterate through a list of expressions.
-	    %% We need to imitate SML do, a.k.a, progn.
+            %% We are getting the head here because we need to adapt the
+            %% evaluator to iterate through a list of expressions.
+            %% We need to imitate SML do, a.k.a, progn.
             evalWithEnvironment(NewEnvironment, lists:nth(1, Body))
     end.
 
@@ -112,12 +120,13 @@ evalApplication(Environment, Abstraction, Arguments) ->
     case evalWithEnvironment(Environment, Abstraction) of
         {ok, {closure, Parameters, Body, ClosedEnvironment}} ->
             evalClosure(ClosedEnvironment, Environment, Arguments, Parameters, Body);
-        {ok, {nativeFunc, Function}} ->
+        {ok, {nativeFunc, _, Function}} ->
             evalNativeFunction(Environment, Function, Arguments);
         _ ->
-            {error,
-             string:concat("Could not apply the following value, because it is not a function: ",
-                           Abstraction)}
+            erlang:error(
+                io:format("Could not apply the following value, because it is not a function: "
+                          "~p~n",
+                          [Abstraction]))
     end.
 
 eval(Expression) ->

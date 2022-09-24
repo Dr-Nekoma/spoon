@@ -59,6 +59,7 @@ prelude() ->
 
 genNativeUnaryFunc(Operator) ->
     {nativeFunc,
+     {function, notVariadic, [{boolean, a}], boolean},
      fun (X) when length(X) =:= 1 ->
              [{ok, {literal, {Type, Y}}}] = X,
              {ok, {literal, {Type, Operator(Y)}}};
@@ -77,6 +78,7 @@ genNativeArithmeticFunc(ArithmeticOperator) ->
            end
         end,
     {nativeFunc,
+     {function, variadic, [{integer, rest}], integer},
      fun(List) ->
         [Head | Tail] = List,
         lists:foldl(Function, Head, Tail)
@@ -84,6 +86,7 @@ genNativeArithmeticFunc(ArithmeticOperator) ->
 
 genNativeComparisonFunc(Operator) ->
     {nativeFunc,
+     {function, notVariadic, [{integer, a}, {integer, b}], boolean},
      fun ([{ok, {literal, {integer, Left}}}, {ok, {literal, {integer, Right}}}]) ->
              {ok, {literal, {boolean, Operator(Left, Right)}}};
          (_) ->
@@ -101,4 +104,5 @@ genNativeLogicalFunc(BoolOperator, MEmpty) ->
            end
         end,
     {nativeFunc,
+     {function, variadic, [{boolean, a}, {boolean, b}], boolean},
      fun(List) -> lists:foldl(Function, {ok, {literal, {boolean, MEmpty}}}, List) end}.

@@ -23,10 +23,10 @@ typeCheckCondition(Environment, Case, Then, Else) ->
     TypeElse = typeCheckWithEnvironment(Environment, Else),
     case {TypeThen =:= TypeElse, TypeCase =:= boolean} of
         {_, false} ->
-            erlang:error("Condition must be a boolean and found ~p~n", [TypeCase]);
+            erlang:error(io:format("Condition must be a boolean and found ~p~n", [TypeCase]));
         {false, _} ->
-            erlang:error("Else branch of type ~p does not conform with expected type ~p of branch Then~n.",
-                         [TypeElse, TypeThen]);
+            erlang:error(io:format("Else branch of type ~p does not conform with expected type ~p of branch Then~n.",
+                         [TypeElse, TypeThen]));
         _ ->
             TypeThen
     end.
@@ -45,7 +45,7 @@ uniq([H | Tail], Acc) ->
         false ->
             uniq(Tail, [H | Acc])
     end.
-
+								  
 typeCheckAbstraction(Environment, {VariadicInfo, Labels}, Body) ->
     % when the parameter is variadic, it needs to have the list type on the function body
     UniqueList = uniq(lists:map(fun({_, X}) -> X end, Labels)),
@@ -53,18 +53,23 @@ typeCheckAbstraction(Environment, {VariadicInfo, Labels}, Body) ->
     if length(UniqueList) =:= length(Labels) ->
            Function = fun({Type, Name}, Accum) -> maps:put(Name, Type, Accum) end,
            NewEnvironment = lists:foldl(Function, Environment, Labels),
-           ReturnType = typeCheckWithEnvironment(NewEnvironment, Body),
+           ReturnType = typeCheckWithEnvironment(NewEnvironment, lists:last(Body)),
            {function, VariadicInfo, Types, ReturnType};
        true ->
-           erlang:error("There are duplicated names in abstraction ~p~n", Labels)
+           erlang:error(io:format("There are duplicated names in abstraction ~p~n", [Labels]))
     end.
+
+%% typeCheckVariable(Environment, WTF) ->
+%%     io:fwrite("~p ~p~n", [Environment, WTF]);
 
 typeCheckVariable(Environment, {variable, Name}) ->
     case maps:find(Name, Environment) of
+	{ok, {nativeFunc, Type, _}} ->
+	    Type;
         {ok, Type} ->
             Type;
         _ ->
-            erlang:error("Didn't find typed variable")
+            erlang:error(io:format("Didn't find typed variable ~p~n", [Name]))
     end.
 
 typeCheckApplication(Environment, Abstraction, Arguments) ->
@@ -75,31 +80,31 @@ typeCheckApplication(Environment, Abstraction, Arguments) ->
             if Types =:= ArgumentsTypes ->
                    ReturnType;
                true ->
-                   erlang:error("Arguments ~p types do not match the parameters types of the abstraction ~p~n",
-                                [Arguments, Abstraction])
+                   erlang:error(io:format("Arguments ~p types do not match the parameters types of the abstraction ~p~n",
+                                [Arguments, Abstraction]))
             end;
         {function, variadic, Types, ReturnType} ->
             NonVarAmount = length(Types) - 1,
             {NonVarTypeArgs, VarTypeArgs} = lists:split(NonVarAmount, ArgumentsTypes),
             {NonVarTypeSig, VarTypeSig} = lists:split(NonVarAmount, Types),
-            io:fwrite("~p~n~p~n", [VarTypeArgs, VarTypeSig]),
             if NonVarTypeSig =:= NonVarTypeArgs ->
                    %% lists:all on an empty list (meaning that the variadic part is empty,
                    %% hence optional) needs to yield true, otherwise this logic is wrong.
-                   case lists:all(fun(X) -> [X] =:= VarTypeSig end, VarTypeArgs) of
+		   {RestType, rest} = hd(VarTypeSig),
+                   case lists:all(fun(X) -> X =:= RestType end, VarTypeArgs) of
                        true ->
                            ReturnType;
                        false ->
-                           erlang:error("Type of the variadic argument in ~p does not match variadic type of the signature in abstraction ~p~n",
-                                        [Arguments, Abstraction])
+                           erlang:error(io:format("Type of the variadic argument in ~p does not match variadic type of the signature in abstraction ~p~n",
+                                        [Arguments, Abstraction]))
                    end;
                true ->
-                   erlang:error("Arguments ~p types do not match the parameters types of the abstraction ~p~n",
-                                [Arguments, Abstraction])
+                   erlang:error(io:format("Arguments ~p types do not match the parameters types of the abstraction ~p~n",
+                                [Arguments, Abstraction]))
             end;
         _ ->
-            erlang:error("Couldn't type check application with arguments ~p and abstraction ~p~n",
-                         [Arguments, Abstraction])
+            erlang:error(io:format("Couldn't type check application with arguments ~p and abstraction ~p~n",
+                         [Arguments, Abstraction]))
     end.
 
 typeCheck(Expression) ->
