@@ -40,7 +40,7 @@ arithDivision() ->
      genNativeArithmeticFunc(fun (_, 0) ->
                                      erlang:error("Division by zero is not allowed");
                                  (A, B) ->
-                                     A / B
+                                     erlang:round(A / B)
                              end)}.
 
 prelude() ->

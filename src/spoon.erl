@@ -13,13 +13,10 @@ main(Arg) ->
             case knife:parse(
                      erlang:binary_to_list(Binary))
             of
-                {failure, Message} ->
-                    erlang:error(
-                        io:format("~p~n", [Message]));
-                {success, AST} ->
+                {_, success, AST} ->
                     _ = typer:typeCheck(AST),
                     case evaluator:eval(AST) of
-			{ok, Value} -> Value;
+			{ok, Value} -> (io:format("SPOON| ~p~n", [Value]));
 			Error -> 
 			    erlang:error(io:format("This should be impossible!~n~n~p~n", [Error]))
 		    end
