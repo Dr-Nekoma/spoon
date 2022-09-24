@@ -24,7 +24,7 @@ boolOr() ->
     {"or", genNativeLogicalFunc(fun erlang:'or'/2, false)}.
 
 boolNot() ->
-    {"not", genNativeUnaryFunc(fun erlang:'not'/1)}.
+    {"not", genNativeBooleanUnaryFunc(fun erlang:'not'/1)}.
 
 arithAdd() ->
     {"+", genNativeArithmeticFunc(fun erlang:'+'/2)}.
@@ -57,52 +57,52 @@ prelude() ->
                     boolLessThan(),
                     boolGreaterThan()]).
 
-genNativeUnaryFunc(Operator) ->
+genNativeBooleanUnaryFunc(Operator) ->
     {nativeFunc,
-     {function, notVariadic, [{boolean, a}], boolean},
+     {function, notVariadic, [boolean], boolean},
      fun (X) when length(X) =:= 1 ->
-             [{ok, {literal, {Type, Y}}}] = X,
+             [{literal, {Type, Y}}] = X,
              {ok, {literal, {Type, Operator(Y)}}};
          (X) when length(X) > 1 ->
-             erlang:error("Unary function does not accept multiple parameters")
+             erlang:error(io:format("Unary function does not accept multiple parameters as in ~p~n", [X]))
      end}.
 
 genNativeArithmeticFunc(ArithmeticOperator) ->
     Function =
         fun(Element, Accum) ->
            case {Accum, Element} of
-               {{ok, {literal, {integer, Acc}}}, {ok, {literal, {integer, X}}}} ->
+               {{ok, {literal, {integer, Acc}}}, {literal, {integer, X}}} ->
                    {ok, {literal, {integer, ArithmeticOperator(Acc, X)}}};
-               _ ->
-                   {error, "Could not operate on this since it's not a number"}
+	       Error ->
+                   erlang:error(io:format("Could not operate on ~p since it's not a number~n", [Error]))
            end
         end,
     {nativeFunc,
-     {function, variadic, [{integer, rest}], integer},
+     {function, variadic, [integer], integer},
      fun(List) ->
-        [Head | Tail] = List,
-        lists:foldl(Function, Head, Tail)
+        [Head | Tail] = lists:flatten(List),
+        lists:foldl(Function, {ok, Head}, Tail)
      end}.
 
 genNativeComparisonFunc(Operator) ->
     {nativeFunc,
-     {function, notVariadic, [{integer, a}, {integer, b}], boolean},
-     fun ([{ok, {literal, {integer, Left}}}, {ok, {literal, {integer, Right}}}]) ->
+     {function, notVariadic, [integer, integer], boolean},
+     fun ([{literal, {integer, Left}}, {literal, {integer, Right}}]) ->
              {ok, {literal, {boolean, Operator(Left, Right)}}};
-         (_) ->
-             erlang:error("Could not eval valid comparison expression with arity 2")
+         (Error) ->
+	     erlang:error(io:format("Could not operate on ~p since it's not a boolean~n", [Error]))
      end}.
 
 genNativeLogicalFunc(BoolOperator, MEmpty) ->
     Function =
         fun(Element, Accum) ->
            case {Accum, Element} of
-               {{ok, {literal, {boolean, Acc}}}, {ok, {literal, {boolean, X}}}} ->
+               {{ok, {literal, {boolean, Acc}}}, {literal, {boolean, X}}} ->
                    {ok, {literal, {boolean, BoolOperator(Acc, X)}}};
-               _ ->
-                   {error, "Could not operate on this since it's not a boolean"}
+               Error ->
+                   erlang:error(io:format("Could not operate on ~p since it's not a boolean~n", [Error]))
            end
         end,
     {nativeFunc,
-     {function, variadic, [{boolean, a}, {boolean, b}], boolean},
-     fun(List) -> lists:foldl(Function, {ok, {literal, {boolean, MEmpty}}}, List) end}.
+     {function, variadic, [boolean], boolean},
+     fun(List) -> lists:foldl(Function, {ok, {literal, {boolean, MEmpty}}}, lists:flatten(List)) end}.

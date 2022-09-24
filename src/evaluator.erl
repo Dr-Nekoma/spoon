@@ -43,33 +43,21 @@ evalClosure(ClosedEnvironment,
     if length(Arguments) >= length(Labels) ->
            EvaluatedValues =
                lists:map(fun(X) -> evalWithEnvironment(Environment, X) end, Arguments),
-           FindAnError =
-               lists:search(fun ({error, _}) ->
-                                    true;
-                                (_) ->
-                                    false
-                            end,
-                            EvaluatedValues),
-           case FindAnError of
-               {value, Error} ->
-                   Error;
-               false ->
-                   {NonVariadicArgs, VariadicArgs} =
-                       lists:split(length(Labels) - 1, EvaluatedValues),
-                   {NonVariadicNames, [VariadicName]} = lists:split(length(Labels) - 1, Labels),
-                   ParamEnv =
-                       maps:from_list(
-                           lists:merge(
-                               lists:zip(NonVariadicNames,
-                                         lists:map(fun({ok, X}) -> X end, NonVariadicArgs)),
-                               [{VariadicName, lists:map(fun({ok, X}) -> X end, VariadicArgs)}])),
-
-                   NewEnvironment = maps:merge(ParamEnv, ClosedEnvironment),
-                   evalWithEnvironment(NewEnvironment, lists:nth(1, Body))
-           end;
+           {NonVariadicArgs, VariadicArgs} = lists:split(length(Labels) - 1, EvaluatedValues),
+           {NonVariadicNames, [VariadicName]} = lists:split(length(Labels) - 1, Labels),
+           ParamEnv =
+               maps:from_list(
+                   lists:merge(
+                       lists:zip(NonVariadicNames,
+                                 lists:map(fun({ok, X}) -> X end, NonVariadicArgs)),
+                       [{VariadicName, lists:map(fun({ok, X}) -> X end, VariadicArgs)}])),
+           NewEnvironment = maps:merge(ParamEnv, ClosedEnvironment),
+           evalWithEnvironment(NewEnvironment, lists:nth(1, Body));
        true ->
-           erlang:error("Less arguments than expected for the non variadic part of the "
-                        "abstraction.")
+           erlang:error(
+               io:format("Less arguments than expected for the non variadic part of the "
+                         "abstraction that uses ~p and ~p~n.",
+                         [Arguments, Labels]))
     end;
 evalClosure(ClosedEnvironment,
             Environment,
@@ -78,43 +66,25 @@ evalClosure(ClosedEnvironment,
             Body) ->
     Labels = lists:map(fun({_, X}) -> X end, TypesAndLabels),
     EvaluatedValues = lists:map(fun(X) -> evalWithEnvironment(Environment, X) end, Arguments),
-    FindAnError =
-        lists:search(fun ({error, _}) ->
-                             true;
-                         (_) ->
-                             false
-                     end,
-                     EvaluatedValues),
-    case FindAnError of
-        {value, Error} ->
-            Error;
-        false ->
-            ParamEnv =
-                maps:from_list(
-                    lists:zip(Labels, lists:map(fun({ok, X}) -> X end, EvaluatedValues))),
-            NewEnvironment = maps:merge(ParamEnv, ClosedEnvironment),
-            %% We are getting the head here because we need to adapt the
-            %% evaluator to iterate through a list of expressions.
-            %% We need to imitate SML do, a.k.a, progn.
-            evalWithEnvironment(NewEnvironment, lists:nth(1, Body))
-    end.
+    ParamEnv =
+        maps:from_list(
+            lists:zip(Labels, lists:map(fun({ok, X}) -> X end, EvaluatedValues))),
+    NewEnvironment = maps:merge(ParamEnv, ClosedEnvironment),
+    %% We are getting the head here because we need to adapt the
+    %% evaluator to iterate through a list of expressions.
+    %% We need to imitate SML do, a.k.a, progn.
+    evalWithEnvironment(NewEnvironment, lists:nth(1, Body)).
 
 evalNativeFunction(Environment, Function, Arguments) ->
-    EvaluatedValues = lists:map(fun(X) -> evalWithEnvironment(Environment, X) end, Arguments),
-    FindAnError =
-        lists:search(fun ({error, _}) ->
-                             true;
-                         (_) ->
-                             false
-                     end,
-                     EvaluatedValues),
-
-    case FindAnError of
-        {value, Error} ->
-            Error;
-        false ->
-            Function(EvaluatedValues)
-    end.
+    EvaluatedValues =
+        lists:map(fun(X) ->
+                     case evalWithEnvironment(Environment, X) of
+                         {ok, Value} -> Value;
+                         Value -> Value
+                     end
+                  end,
+                  Arguments),
+    Function(EvaluatedValues).
 
 evalApplication(Environment, Abstraction, Arguments) ->
     case evalWithEnvironment(Environment, Abstraction) of

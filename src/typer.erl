@@ -4,8 +4,6 @@
 
 -import(prelude, [prelude/0]).
 
-%% {literal, {integer, 1}}
-
 typeCheckWithEnvironment(_, {literal, {Type, _}}) ->
     Type;
 typeCheckWithEnvironment(Environment, {condition, Case, Then, Else}) ->
@@ -53,14 +51,11 @@ typeCheckAbstraction(Environment, {VariadicInfo, Labels}, Body) ->
     if length(UniqueList) =:= length(Labels) ->
            Function = fun({Type, Name}, Accum) -> maps:put(Name, Type, Accum) end,
            NewEnvironment = lists:foldl(Function, Environment, Labels),
-           ReturnType = typeCheckWithEnvironment(NewEnvironment, lists:last(Body)),
+	   ReturnType = typeCheckWithEnvironment(NewEnvironment, lists:last(Body)),
            {function, VariadicInfo, Types, ReturnType};
        true ->
            erlang:error(io:format("There are duplicated names in abstraction ~p~n", [Labels]))
     end.
-
-%% typeCheckVariable(Environment, WTF) ->
-%%     io:fwrite("~p ~p~n", [Environment, WTF]);
 
 typeCheckVariable(Environment, {variable, Name}) ->
     case maps:find(Name, Environment) of
@@ -90,7 +85,7 @@ typeCheckApplication(Environment, Abstraction, Arguments) ->
             if NonVarTypeSig =:= NonVarTypeArgs ->
                    %% lists:all on an empty list (meaning that the variadic part is empty,
                    %% hence optional) needs to yield true, otherwise this logic is wrong.
-		   {RestType, rest} = hd(VarTypeSig),
+		   RestType = hd(VarTypeSig),
                    case lists:all(fun(X) -> X =:= RestType end, VarTypeArgs) of
                        true ->
                            ReturnType;
@@ -109,5 +104,3 @@ typeCheckApplication(Environment, Abstraction, Arguments) ->
 
 typeCheck(Expression) ->
     typeCheckWithEnvironment(prelude(), Expression).
-
-% Lemos: https://en.wikipedia.org/wiki/Simply_typed_lambda_calculus#Typing_rules

@@ -18,7 +18,11 @@ main(Arg) ->
                         io:format("~p~n", [Message]));
                 {success, AST} ->
                     _ = typer:typeCheck(AST),
-                    evaluator:eval(AST)
+                    case evaluator:eval(AST) of
+			{ok, Value} -> Value;
+			Error -> 
+			    erlang:error(io:format("This should be impossible!~n~n~p~n", [Error]))
+		    end
             end;
         {error, _} ->
             erlang:error("Coundn't read file from provided filepath")
