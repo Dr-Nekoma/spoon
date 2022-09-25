@@ -30,7 +30,7 @@ Here it is an example of output:
   Erlang/OTP 24 [erts-12.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]
 
   Eshell V12.2  (abort with ^G)
-  1> spoon:main("examples/advanced.sw")
+  1> spoon:main("examples/advanced.sw").
   SPOON| {literal, {integer, 60}}
   ok
 #+end_src
